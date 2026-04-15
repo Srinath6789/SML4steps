@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)https://wittering-gray-phjrpkbhcv.edgeone.app/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniQuiz Studio | Professional Edition</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --accent: #059669; --danger: #ef4444; --warning: #f59e0b; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #1e293b; transition: background 0.3s; }
+        .container { max-width: 1100px; margin: 40px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .hidden { display: none !important; }
+
+        /* --- NAVIGATION TABS --- */
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; cursor: pointer; border-radius: 6px; font-weight: 600; border: none; background: #e2e8f0; color: #64748b; }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        /* --- SAVED QUIZZES LIST --- */
+        .quiz-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 15px; transition: 0.2s; }
+        .quiz-item:hover { border-color: var(--primary); background: #f1f5f9; }
+        .quiz-info h3 { margin: 0 0 5px 0; color: var(--primary); }
+        .quiz-info p { margin: 0; font-size: 12px; color: #64748b; font-family: monospace; }
+        .quiz-actions { display: flex; gap: 10px; }
+
+        /* --- STUDIO / EDITOR STYLING --- */
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; background: #f1f5f9; padding: 25px; border-radius: 10px; margin-bottom: 30px; }
+        label { display: block; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #64748b; margin-bottom: 8px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        
+        .q-card { border: 1px solid #e2e8f0; padding: 30px; border-radius: 12px; margin-bottom: 25px; background: #fff; border-left: 8px solid var(--primary); position: relative; }
+        .q-number-badge { position: absolute; top: -10px; left: -10px; background: var(--primary); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .delete-btn { position: absolute; top: 15px; right: 15px; background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .edit-rich-btn { position: absolute; top: 15px; right: 90px; background: #e0f2fe; color: var(--primary); border: 1px solid #bae6fd; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold; }
+
+        .input-group { position: relative; margin-bottom: 10px; width: 100%; }
+        .paste-zone { background: #fff; border: 1px solid #cbd5e1; padding-right: 80px !important; }
+        .btn-preview-toggle { position: absolute; right: 5px; top: 5px; background: #64748b; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+        .preview-pane { margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 6px; display: none; background: #f8fafc; padding: 10px; text-align: center; }
+        .preview-pane img, .preview-pane video { max-height: 120px; border-radius: 4px; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; transition: 0.2s; }
+        .btn-add { background: var(--accent); color: white; margin-bottom: 20px; }
+        .btn-launch { background: var(--primary); color: white; width: 100%; font-size: 1.2rem; margin-top: 20px; }
+
+        /* --- RICH TEXT MODAL --- */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 80%; max-width: 800px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 5px; background: #f1f5f9; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #cbd5e1; border-bottom: none; }
+        .toolbar button, .toolbar select, .toolbar input[type="color"] { padding: 5px; cursor: pointer; border: 1px solid #cbd5e1; background: white; border-radius: 4px; font-weight: bold; }
+        .toolbar button:hover { background: #e2e8f0; }
+        .editor-area { height: 300px; border: 1px solid #cbd5e1; border-radius: 0 0 8px 8px; padding: 15px; overflow-y: auto; background: white; }
+
+        /* --- PLAYER LAYOUT --- */
+        #player-view { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; flex-direction: column; display: none; z-index: 1000; background: inherit; }
+        .p-header { background: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
+        .p-main { flex: 1; overflow-y: auto; display: flex; justify-content: center; padding: 30px; }
+        .slide { background: white; padding: 40px; border-radius: 16px; width: 100%; max-width: 1100px; box-shadow: 0 15px 50px rgba(0,0,0,0.1); align-self: flex-start; }
+        
+        .quiz-split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: start; margin-top: 20px; }
+        .quiz-question-side { border-right: 2px solid #f1f5f9; padding-right: 30px; min-height: 300px; }
+        .quiz-options-side { display: flex; flex-direction: column; gap: 12px; }
+
+        .opt-row { border: 2px solid #e2e8f0; padding: 18px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .opt-row:hover { border-color: var(--primary); background: #f8fbff; }
+        .opt-row.readonly { cursor: default; }
+        .opt-row.readonly:hover { border-color: #e2e8f0; background: white; }
+        .opt-text-container { flex: 1; padding-right: 20px; font-size: 1.1rem; color: #1e293b; font-weight: 500; }
+        .opt-input-check { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+
+        .main-media { width: 100%; max-height: 450px; object-fit: contain; border-radius: 8px; margin-bottom: 25px; }
+
+        /* --- MATCHING ROW STYLE --- */
+        .match-row-display { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; margin-bottom: 10px; }
+        .match-key-label { background: #f1f5f9; padding: 12px; border-radius: 6px; font-weight: 600; text-align: right; border: 1px solid #cbd5e1; }
+        
+        .stats-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; color: white; margin-left: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="studio-view" class="container">
+    <div class="nav-tabs">
+        <button id="tab-editor" class="tab-btn active" onclick="switchTab(&#39;editor&#39;)">Quiz Editor</button>
+        <button id="tab-saved" class="tab-btn" onclick="switchTab(&#39;saved&#39;)">My Saved Quizzes</button>
+    </div>
+
+    <div id="editor-section">
+        <div class="header-actions">
+            <h1>Super Math Learning | Quiz Studio</h1>
+            <button class="btn" style="background:var(--warning); color:white;" onclick="createNewQuiz()">+ New Quiz</button>
+        </div>
+
+        <div class="config-grid">
+            <div><label>Quiz Title</label><input type="text" id="qz-title" oninput="autoSave()" value="Math Assessment"></div>
+            <div><label>Timer (Seconds)</label><input type="number" id="qz-time" oninput="autoSave()" value="0"></div>
+            <div><label>Background Color</label><input type="color" id="qz-color" oninput="autoSave()" value="#f8fafc"></div>
+            <div><label>Quiz ID</label><input type="text" id="qz-id" readonly="" style="background:#f1f5f9;"></div>
+            <div><label>Shareable Play URL</label><input type="text" id="qz-play-url" readonly="" style="background:#f0f9ff; font-family:monospace; font-size:12px;" onclick="this.select()"></div>
+        </div>
+
+        <div id="questions-list">
+            <div class="q-card" id="card-1776090544971.4512" data-id="1776090544971.4512">
+                <div class="q-number-badge">1</div>
+                <button class="edit-rich-btn" onclick="openRichEditor(&#39;1776090544971.4512&#39;)">EDIT CONTENT</button>
+                <button class="delete-btn" onclick="removeQuestion(&#39;1776090544971.4512&#39;)">REMOVE</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:15px;">
+                    <div><label>Type</label>
+                        <select class="q-type" onchange="toggleQType(&#39;1776090544971.4512&#39;); autoSave()">
+                            <option value="mcq">MCQ</option>
+                            <option value="checkbox">Checkbox</option>
+                            <option value="blank">Fill Blank</option>
+                            <option value="dropdown">Dropdown</option>
+                            <option value="match">Match Following</option>
+                        </select>
+                    </div>
+                    <div><label>Media (Paste Img/Vid/GIF)</label><div class="input-group"><input type="text" class="paste-zone " id="q-media-1776090544971.4512" oninput="autoSave()" onpaste="handlePaste(event, this, &#39;prev-q-media-1776090544971.4512&#39;)"><button class="btn-preview-toggle" onclick="togglePreview(&#39;prev-q-media-1776090544971.4512&#39;, &#39;q-media-1776090544971.4512&#39;)">VIEW</button><div id="prev-q-media-1776090544971.4512" class="preview-pane"></div></div></div>
+                </div>
+                <label>Question Content (HTML Support)</label>
+                <textarea class="q-text" id="q-text-1776090544971.4512" rows="2" oninput="autoSave()" placeholder="Click Edit Content for rich styling..."></textarea>
+                <div class="options-grid" id="opt-grid-1776090544971.4512">
+                    
+                        <div class="match-input-pair-1776090544971.4512" style="display:contents">
+                            <input type="text" class="match-key-val hidden" placeholder="Left Side Item" oninput="autoSave()">
+                            <div class="input-group"><input type="text" class="paste-zone opt-val" id="opt-1776090544971.4512-1" oninput="autoSave()" onpaste="handlePaste(event, this, &#39;prev-opt-1776090544971.4512-1&#39;)"><button class="btn-preview-toggle" onclick="togglePreview(&#39;prev-opt-1776090544971.4512-1&#39;, &#39;opt-1776090544971.4512-1&#39;)">VIEW</button><div id="prev-opt-1776090544971.4512-1" class="preview-pane"></div></div>
+                        </div>
+                        <div class="match-input-pair-1776090544971.4512" style="display:contents">
+                            <input type="text" class="match-key-val hidden" placeholder="Left Side Item" oninput="autoSave()">
+                            <div class="input-group"><input type="text" class="paste-zone opt-val" id="opt-1776090544971.4512-2" oninput="autoSave()" onpaste="handlePaste(event, this, &#39;prev-opt-1776090544971.4512-2&#39;)"><button class="btn-preview-toggle" onclick="togglePreview(&#39;prev-opt-1776090544971.4512-2&#39;, &#39;opt-1776090544971.4512-2&#39;)">VIEW</button><div id="prev-opt-1776090544971.4512-2" class="preview-pane"></div></div>
+                        </div>
+                        <div class="match-input-pair-1776090544971.4512" style="display:contents">
+                            <input type="text" class="match-key-val hidden" placeholder="Left Side Item" oninput="autoSave()">
+                            <div class="input-group"><input type="text" class="paste-zone opt-val" id="opt-1776090544971.4512-3" oninput="autoSave()" onpaste="handlePaste(event, this, &#39;prev-opt-1776090544971.4512-3&#39;)"><button class="btn-preview-toggle" onclick="togglePreview(&#39;prev-opt-1776090544971.4512-3&#39;, &#39;opt-1776090544971.4512-3&#39;)">VIEW</button><div id="prev-opt-1776090544971.4512-3" class="preview-pane"></div></div>
+                        </div>
+                        <div class="match-input-pair-1776090544971.4512" style="display:contents">
+                            <input type="text" class="match-key-val hidden" placeholder="Left Side Item" oninput="autoSave()">
+                            <div class="input-group"><input type="text" class="paste-zone opt-val" id="opt-1776090544971.4512-4" oninput="autoSave()" onpaste="handlePaste(event, this, &#39;prev-opt-1776090544971.4512-4&#39;)"><button class="btn-preview-toggle" onclick="togglePreview(&#39;prev-opt-1776090544971.4512-4&#39;, &#39;opt-1776090544971.4512-4&#39;)">VIEW</button><div id="prev-opt-1776090544971.4512-4" class="preview-pane"></div></div>
+                        </div>
+                        <div class="match-input-pair-1776090544971.4512" style="display:contents">
+                            <input type="text" class="match-key-val hidden" placeholder="Left Side Item" oninput="autoSave()">
+                            <div class="input-group"><input type="text" class="paste-zone opt-val" id="opt-1776090544971.4512-5" oninput="autoSave()" onpaste="handlePaste(event, this, &#39;prev-opt-1776090544971.4512-5&#39;)"><button class="btn-preview-toggle" onclick="togglePreview(&#39;prev-opt-1776090544971.4512-5&#39;, &#39;opt-1776090544971.4512-5&#39;)">VIEW</button><div id="prev-opt-1776090544971.4512-5" class="preview-pane"></div></div>
+                        </div>
+                        <div class="match-input-pair-1776090544971.4512" style="display:contents">
+                            <input type="text" class="match-key-val hidden" placeholder="Left Side Item" oninput="autoSave()">
+                            <div class="input-group"><input type="text" class="paste-zone opt-val" id="opt-1776090544971.4512-6" oninput="autoSave()" onpaste="handlePaste(event, this, &#39;prev-opt-1776090544971.4512-6&#39;)"><button class="btn-preview-toggle" onclick="togglePreview(&#39;prev-opt-1776090544971.4512-6&#39;, &#39;opt-1776090544971.4512-6&#39;)">VIEW</button><div id="prev-opt-1776090544971.4512-6" class="preview-pane"></div></div>
+                        </div>
+                </div>
+                <div style="margin-top:20px;"><label id="ans-label-1776090544971.4512">Correct Answer</label><div class="input-group"><input type="text" class="paste-zone " id="q-ans-1776090544971.4512" oninput="autoSave()" onpaste="handlePaste(event, this, &#39;prev-q-ans-1776090544971.4512&#39;)"><button class="btn-preview-toggle" onclick="togglePreview(&#39;prev-q-ans-1776090544971.4512&#39;, &#39;q-ans-1776090544971.4512&#39;)">VIEW</button><div id="prev-q-ans-1776090544971.4512" class="preview-pane"></div></div></div>
+            </div></div>
+        <button class="btn btn-add" onclick="addQuestion()">+ Add New Question</button>
+        <button class="btn btn-launch" onclick="launchInNewTab()">▶️ Launch Assessment (New Tab)</button>
+        <button class="btn" style="background: #64748b; color: white; width: 100%; margin-top: 10px;" onclick="launchPreview()">👁️ Show Preview (Read-Only)</button>
+    </div>
+
+    <div id="saved-section" class="hidden">
+        <div class="header-actions">
+            <h1>My Saved Quizzes</h1>
+        </div>
+        <div id="quiz-registry-list"></div>
+    </div>
+</div>
+
+<div id="rich-modal" class="modal">
+    <div class="modal-content">
+        <label>Edit Question Text</label>
+        <div class="toolbar">
+            <button onclick="execCmd(&#39;bold&#39;)"><b>B</b></button>
+            <button onclick="execCmd(&#39;italic&#39;)"><i>I</i></button>
+            <button onclick="execCmd(&#39;underline&#39;)"><u>U</u></button>
+            <select onchange="execCmd(&#39;fontSize&#39;, this.value)">
+                <option value="3">Size</option>
+                <option value="1">Small</option>
+                <option value="3">Normal</option>
+                <option value="5">Large</option>
+                <option value="7">Huge</option>
+            </select>
+            <input type="color" onchange="execCmd(&#39;foreColor&#39;, this.value)" title="Text Color">
+            <button onclick="execCmd(&#39;insertUnorderedList&#39;)">• List</button>
+            <button onclick="execCmd(&#39;insertOrderedList&#39;)">1. List</button>
+            <button onclick="execCmd(&#39;justifyLeft&#39;)">Left</button>
+            <button onclick="execCmd(&#39;justifyCenter&#39;)">Center</button>
+            <button onclick="execCmd(&#39;justifyRight&#39;)">Right</button>
+        </div>
+        <div id="rich-editor" class="editor-area" contenteditable="true"></div>
+        <div style="margin-top:20px; text-align:right;">
+            <button class="btn" style="background:#64748b; color:white;" onclick="closeModal()">Cancel</button>
+            <button class="btn" style="background:var(--primary); color:white;" onclick="saveRichText()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<div id="player-view">
+    <div class="p-header">
+        <div>
+            <h2 id="p-title-display" style="margin:0;">Quiz</h2>
+            <div id="p-stats-display" style="margin-top:5px;">
+                <span id="stat-attempted" class="stats-badge" style="background:var(--accent);">Attempted: 0</span>
+                <span id="stat-unattempted" class="stats-badge" style="background:var(--danger);">Unattempted: 0</span>
+            </div>
+        </div>
+        <div id="timer-display" style="font-size:1.8rem; font-weight:bold; color: var(--danger);">0s</div>
+    </div>
+    <div class="p-main"><div id="mount" class="slide"></div></div>
+    <div id="player-footer" style="padding:20px; background:white; text-align:right; border-top:1px solid #ddd; display: flex; justify-content: flex-end; gap: 10px;"></div>
+</div>
+
+<script>
+    let masterQuestions = [];
+    let activeQuestions = [];
+    let step = 0, score = 0, timeLeft = 0, timerInterval;
+    let currentQuizId = '';
+    let userAnswers = [];
+    let isPreviewMode = false;
+    let currentEditingQId = null;
+
+    function generateQuizId() { return 'quiz_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+
+    function switchTab(tab) {
+        document.getElementById('editor-section').classList.toggle('hidden', tab !== 'editor');
+        document.getElementById('saved-section').classList.toggle('hidden', tab !== 'saved');
+        document.getElementById('tab-editor').classList.toggle('active', tab === 'editor');
+        document.getElementById('tab-saved').classList.toggle('active', tab === 'saved');
+        if(tab === 'saved') renderRegistry();
+    }
+
+    function updatePlayUrl() {
+        const id = document.getElementById('qz-id').value;
+        const playUrl = `${window.location.origin}${window.location.pathname}?play=${id}`;
+        document.getElementById('qz-play-url').value = playUrl;
+    }
+
+    window.onload = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const playId = urlParams.get('play');
+        const quizId = urlParams.get('quiz');
+        if (playId) { currentQuizId = playId; loadAndPlayQuiz(playId); }
+        else if (quizId) { loadQuizForEditing(quizId); }
+        else { const lastId = localStorage.getItem('lastActiveQuizId'); if (lastId) loadQuizForEditing(lastId); else createNewQuiz(); }
+    };
+
+    function autoSave() {
+        const id = document.getElementById('qz-id').value;
+        const title = document.getElementById('qz-title').value;
+        const data = {
+            quizId: id,
+            title: title,
+            timer: document.getElementById('qz-time').value,
+            color: document.getElementById('qz-color').value,
+            questions: []
+        };
+        document.querySelectorAll('.q-card').forEach((card, index) => {
+            const qId = card.dataset.id;
+            card.querySelector('.q-number-badge').innerText = index + 1;
+            const type = card.querySelector('.q-type').value;
+            let qData = {
+                type: type,
+                media: document.getElementById('q-media-' + qId).value,
+                text: card.querySelector('.q-text').value,
+                opts: Array.from(card.querySelectorAll('.opt-val')).map(i => i.value),
+                ans: document.getElementById('q-ans-' + qId).value
+            };
+            if (type === 'match') { qData.keys = Array.from(card.querySelectorAll('.match-key-val')).map(i => i.value); }
+            data.questions.push(qData);
+        });
+        localStorage.setItem('omniQuizData_' + id, JSON.stringify(data));
+        localStorage.setItem('lastActiveQuizId', id);
+        let registry = JSON.parse(localStorage.getItem('omniQuizRegistry') || "[]");
+        const idx = registry.findIndex(q => q.id === id);
+        const entry = { id, title, timestamp: Date.now() };
+        if (idx > -1) registry[idx] = entry; else registry.push(entry);
+        localStorage.setItem('omniQuizRegistry', JSON.stringify(registry));
+        updatePlayUrl();
+    }
+
+    /* --- RICH TEXT MODAL LOGIC --- */
+    function openRichEditor(qId) {
+        currentEditingQId = qId;
+        const currentText = document.getElementById('q-text-' + qId).value;
+        document.getElementById('rich-editor').innerHTML = currentText;
+        document.getElementById('rich-modal').style.display = 'flex';
+    }
+    function closeModal() { document.getElementById('rich-modal').style.display = 'none'; }
+    function execCmd(cmd, val = null) { document.execCommand(cmd, false, val); }
+    function saveRichText() {
+        const richContent = document.getElementById('rich-editor').innerHTML;
+        document.getElementById('q-text-' + currentEditingQId).value = richContent;
+        autoSave();
+        closeModal();
+    }
+
+    function renderRegistry() {
+        const registry = JSON.parse(localStorage.getItem('omniQuizRegistry') || "[]");
+        const list = document.getElementById('quiz-registry-list');
+        if(registry.length === 0) {
+            list.innerHTML = `<p style="text-align:center; color:#64748b; padding:40px;">No saved quizzes found. Create one to get started!</p>`;
+            return;
+        }
+        list.innerHTML = registry.sort((a,b) => b.timestamp - a.timestamp).map(q => `
+            <div class="quiz-item">
+                <div class="quiz-info"><h3>${q.title || 'Untitled Quiz'}</h3><p>ID: ${q.id}</p></div>
+                <div class="quiz-actions">
+                    <button class="btn" style="background:var(--accent); color:white;" onclick="window.open('?play=${q.id}', '_blank')">Play</button>
+                    <button class="btn" style="background:var(--primary); color:white;" onclick="loadQuizForEditing('${q.id}')">Edit</button>
+                    <button class="btn" style="background:var(--danger); color:white;" onclick="deleteQuiz('${q.id}')">Delete</button>
+                </div>
+            </div>`).join('');
+    }
+
+    function deleteQuiz(id) {
+        if(!confirm("Permanently delete this quiz?")) return;
+        localStorage.removeItem('omniQuizData_' + id);
+        let registry = JSON.parse(localStorage.getItem('omniQuizRegistry') || "[]");
+        localStorage.setItem('omniQuizRegistry', JSON.stringify(registry.filter(q => q.id !== id)));
+        renderRegistry();
+    }
+
+    function launchInNewTab() {
+        const id = document.getElementById('qz-id').value;
+        const playUrl = `${window.location.origin}${window.location.pathname}?play=${id}`;
+        window.open(playUrl, '_blank');
+    }
+
+    function launchPreview() { isPreviewMode = true; loadAndPlayQuiz(currentQuizId, false); }
+
+    function loadAndPlayQuiz(id, isRandomized = false) {
+        const saved = JSON.parse(localStorage.getItem('omniQuizData_' + id));
+        if (!saved) return;
+        masterQuestions = saved.questions.filter(q => q.text || q.media);
+        activeQuestions = [...masterQuestions];
+        if (isRandomized) activeQuestions.sort(() => Math.random() - 0.5);
+        document.body.style.backgroundColor = saved.color;
+        document.getElementById('studio-view').classList.add('hidden');
+        document.getElementById('player-view').style.display = 'flex';
+        userAnswers = new Array(activeQuestions.length).fill(null);
+        step = 0; score = 0;
+        timeLeft = parseInt(saved.timer);
+        document.getElementById('p-title-display').innerText = saved.title + (isPreviewMode ? " (Preview Mode)" : "");
+        updateStats();
+        renderSlide();
+        if (timeLeft > 0 && !isPreviewMode) {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-display').innerText = timeLeft + "s";
+                if(timeLeft <= 0) calculateScoreAndShowFinal();
+            }, 1000);
+        } else { document.getElementById('timer-display').innerText = ""; }
+    }
+
+    function updateStats() {
+        const attempted = userAnswers.filter(a => a !== null && a !== "" && (!Array.isArray(a) || a.some(v => v !== ""))).length;
+        document.getElementById('stat-attempted').innerText = `Attempted: ${attempted}`;
+        document.getElementById('stat-unattempted').innerText = `Unattempted: ${activeQuestions.length - attempted}`;
+    }
+
+    function renderSlide() {
+        const q = activeQuestions[step];
+        const mount = document.getElementById('mount');
+        
+        let mediaHtml = "";
+        const m = q.media;
+        if(m) {
+            if(m.includes('video') || m.endsWith('.mp4') || m.endsWith('.webm')) {
+                mediaHtml = `<video class="main-media" src="${m}" controls autoplay loop></video>`;
+            } else {
+                mediaHtml = `<img class="main-media" src="${m}">`;
+            }
+        }
+
+        let html = `<h3>Question ${step + 1} of ${activeQuestions.length}</h3>
+                    <div class="quiz-split">
+                        <div class="quiz-question-side">${mediaHtml}<div style="font-size:1.6rem; font-weight:700;">${q.text}</div></div>
+                        <div class="quiz-options-side">`;
+        if(q.type === 'blank') {
+            html += `<input type="text" id="user-ans" placeholder="Type answer here..." value="${userAnswers[step] || ''}" style="font-size:1.3rem; padding:20px;" ${isPreviewMode ? 'disabled' : ''}>`;
+        } else if(q.type === 'dropdown') {
+            html += `<select id="user-ans" style="font-size:1.3rem; padding:20px;" ${isPreviewMode ? 'disabled' : ''}><option value="">Select Answer</option>${q.opts.filter(o => o).map(o => `<option value="${o}" ${userAnswers[step] === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+        } else if(q.type === 'match') {
+            const shuffledChoices = [...q.opts].filter(o => o);
+            html += q.keys.filter((k, i) => k || q.opts[i]).map((k, i) => {
+                const prevChoice = userAnswers[step] ? userAnswers[step][i] : '';
+                return `
+                <div class="match-row-display">
+                    <div class="match-key-label">${k || '---'}</div>
+                    <select class="match-user-choice" data-index="${i}" style="padding:10px;" ${isPreviewMode ? 'disabled' : ''}>
+                        <option value="">Select Match</option>
+                        ${shuffledChoices.map(c => `<option value="${c}" ${prevChoice === c ? 'selected' : ''}>${c}</option>`).join('')}
+                    </select>
+                </div>`}).join('');
+        } else {
+            const inputType = q.type === 'checkbox' ? 'checkbox' : 'radio';
+            const prevAns = userAnswers[step] || (q.type === 'checkbox' ? [] : '');
+            html += q.opts.filter(o => o).map(o => {
+                const isChecked = q.type === 'checkbox' ? prevAns.includes(o) : prevAns === o;
+                return `
+                <div class="opt-row ${isPreviewMode ? 'readonly' : ''}" onclick="${isPreviewMode ? '' : "this.querySelector('input').click()"}">
+                    <div class="opt-text-container">${renderContent(o)}</div>
+                    <input type="${inputType}" class="opt-input-check" name="choice" value="${o}" ${isChecked ? 'checked' : ''} ${isPreviewMode ? 'disabled' : ''}>
+                </div>`}).join('');
+        }
+        mount.innerHTML = html + `</div></div>`;
+
+        let footerHtml = '';
+        if (step > 0) footerHtml += `<button class="btn" style="background:#64748b; color:white; padding: 15px 40px;" onclick="handleBack()">Previous</button>`;
+        if (step < activeQuestions.length - 1) {
+            footerHtml += `<button class="btn" id="next-btn" style="background:var(--primary); color:white; padding: 15px 40px;" onclick="handleNext()">Save & Continue</button>`;
+        } else {
+            footerHtml += `<button class="btn" id="next-btn" style="background:var(--accent); color:white; padding: 15px 40px;" onclick="${isPreviewMode ? 'exitPreview()' : 'handleNext()'}">${isPreviewMode ? 'Exit Preview' : 'Submit Quiz'}</button>`;
+        }
+        document.getElementById('player-footer').innerHTML = footerHtml;
+    }
+
+    function saveCurrentAnswer() {
+        if (isPreviewMode) return;
+        const q = activeQuestions[step];
+        if(q.type === 'blank' || q.type === 'dropdown') {
+            userAnswers[step] = (document.getElementById('user-ans').value || "").trim();
+        } else if(q.type === 'match') {
+            userAnswers[step] = Array.from(document.querySelectorAll('.match-user-choice')).map(s => s.value);
+        } else if(q.type === 'checkbox') {
+            userAnswers[step] = Array.from(document.querySelectorAll('input[name="choice"]:checked')).map(e => e.value);
+        } else {
+            userAnswers[step] = document.querySelector('input[name="choice"]:checked')?.value || "";
+        }
+        updateStats();
+    }
+
+    function handleBack() { saveCurrentAnswer(); if (step > 0) { step--; renderSlide(); } }
+    function handleNext() { saveCurrentAnswer(); if(++step < activeQuestions.length) renderSlide(); else calculateScoreAndShowFinal(); }
+
+    function exitPreview() {
+        isPreviewMode = false;
+        // Modified: Leading directly to the score page view
+        document.getElementById('player-view').style.display = 'flex';
+        calculateScoreAndShowFinal();
+    }
+
+    function calculateScoreAndShowFinal() {
+        score = 0;
+        activeQuestions.forEach((q, i) => {
+            let isCorrect = false;
+            const ans = userAnswers[i];
+            if(q.type === 'blank' || q.type === 'dropdown') { isCorrect = (ans || "").toLowerCase() === (q.ans || "").toLowerCase(); }
+            else if(q.type === 'match') { isCorrect = ans && ans.every((val, idx) => val === q.opts[idx]); }
+            else if(q.type === 'checkbox') { isCorrect = ans && ans.join(',') === q.ans; }
+            else { isCorrect = ans === q.ans; }
+            if(isCorrect) score++;
+        });
+        showFinal();
+    }
+
+    function showFinal() {
+        clearInterval(timerInterval);
+        document.getElementById('mount').innerHTML = `<div style="text-align:center; padding:50px;"><h1>Quiz Completed!</h1><div style="font-size:4rem; font-weight:900; color:var(--primary); margin:20px 0;">${score} / ${activeQuestions.length}</div></div>`;
+        document.getElementById('player-footer').innerHTML = `
+            <button class="btn" style="background:var(--warning); color:white; padding: 15px 40px;" onclick="loadAndPlayQuiz(currentQuizId, true)">Restart Quiz (Randomized Order)</button>
+            <button class="btn" style="background:#64748b; color:white; padding: 15px 40px;" onclick="launchReadOnlyPreview()">👁️ Show Preview (Review Unattempted)</button>`;
+    }
+
+    function launchReadOnlyPreview() { isPreviewMode = true; step = 0; renderSlide(); }
+
+    function loadQuizForEditing(id) {
+        const saved = JSON.parse(localStorage.getItem('omniQuizData_' + id));
+        if (!saved) return;
+        currentQuizId = id;
+        document.getElementById('qz-id').value = id;
+        document.getElementById('qz-title').value = saved.title;
+        document.getElementById('qz-time').value = saved.timer;
+        document.getElementById('qz-color').value = saved.color;
+        document.getElementById('questions-list').innerHTML = '';
+        saved.questions.forEach(q => addQuestion(q));
+        updatePlayUrl();
+        switchTab('editor');
+        autoSave();
+    }
+
+    function createNewQuiz() {
+        currentQuizId = generateQuizId();
+        document.getElementById('qz-id').value = currentQuizId;
+        document.getElementById('questions-list').innerHTML = '';
+        addQuestion();
+        autoSave();
+    }
+
+    function addQuestion(savedData = null) {
+        const id = savedData ? (savedData.id || Date.now() + Math.random()) : Date.now();
+        const html = `
+            <div class="q-card" id="card-${id}" data-id="${id}">
+                <div class="q-number-badge"></div>
+                <button class="edit-rich-btn" onclick="openRichEditor('${id}')">EDIT CONTENT</button>
+                <button class="delete-btn" onclick="removeQuestion('${id}')">REMOVE</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:15px;">
+                    <div><label>Type</label>
+                        <select class="q-type" onchange="toggleQType('${id}'); autoSave()">
+                            <option value="mcq">MCQ</option>
+                            <option value="checkbox">Checkbox</option>
+                            <option value="blank">Fill Blank</option>
+                            <option value="dropdown">Dropdown</option>
+                            <option value="match">Match Following</option>
+                        </select>
+                    </div>
+                    <div><label>Media (Paste Img/Vid/GIF)</label>${createInputGroup('q-media-' + id)}</div>
+                </div>
+                <label>Question Content (HTML Support)</label>
+                <textarea class="q-text" id="q-text-${id}" rows="2" oninput="autoSave()" placeholder="Click Edit Content for rich styling..."></textarea>
+                <div class="options-grid" id="opt-grid-${id}">
+                    ${[1,2,3,4,5,6].map(n => `
+                        <div class="match-input-pair-${id}" style="display:contents">
+                            <input type="text" class="match-key-val hidden" placeholder="Left Side Item" oninput="autoSave()">
+                            ${createInputGroup('opt-' + id + '-' + n, true)}
+                        </div>`).join('')}
+                </div>
+                <div style="margin-top:20px;"><label id="ans-label-${id}">Correct Answer</label>${createInputGroup('q-ans-' + id)}</div>
+            </div>`;
+        document.getElementById('questions-list').insertAdjacentHTML('beforeend', html);
+        if(savedData) {
+            const card = document.getElementById('card-' + id);
+            card.querySelector('.q-type').value = savedData.type;
+            document.getElementById('q-media-' + id).value = savedData.media;
+            card.querySelector('.q-text').value = savedData.text;
+            card.querySelectorAll('.opt-val').forEach((input, i) => input.value = savedData.opts[i] || "");
+            if(savedData.keys) card.querySelectorAll('.match-key-val').forEach((input, i) => input.value = savedData.keys[i] || "");
+            document.getElementById('q-ans-' + id).value = savedData.ans;
+            toggleQType(id);
+        }
+        autoSave();
+    }
+
+    function toggleQType(id) {
+        const card = document.getElementById('card-' + id);
+        const type = card.querySelector('.q-type').value;
+        const keys = card.querySelectorAll('.match-key-val');
+        const ansLabel = document.getElementById('ans-label-' + id);
+        const ansInput = document.getElementById('q-ans-' + id).closest('.input-group');
+        if (type === 'match') {
+            keys.forEach(k => k.classList.remove('hidden'));
+            ansLabel.classList.add('hidden');
+            ansInput.classList.add('hidden');
+        } else {
+            keys.forEach(k => k.classList.add('hidden'));
+            ansLabel.classList.remove('hidden');
+            ansInput.classList.remove('hidden');
+        }
+    }
+
+    function createInputGroup(id, isSmall) { return `<div class="input-group"><input type="text" class="paste-zone ${isSmall ? 'opt-val' : ''}" id="${id}" oninput="autoSave()" onpaste="handlePaste(event, this, 'prev-${id}')"><button class="btn-preview-toggle" onclick="togglePreview('prev-${id}', '${id}')">VIEW</button><div id="prev-${id}" class="preview-pane"></div></div>`; }
+    
+    function handlePaste(e, input, prevId) { 
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) { 
+            if (item.type.indexOf("image") !== -1 || item.type.indexOf("video") !== -1) { 
+                const reader = new FileReader();
+                reader.onload = (event) => { input.value = event.target.result; autoSave(); }; 
+                reader.readAsDataURL(item.getAsFile());
+            } 
+        } 
+    }
+
+    function togglePreview(prevId, inputId) { 
+        const pane = document.getElementById(prevId);
+        const val = document.getElementById(inputId).value;
+        if(val.startsWith('data:video') || val.includes('.mp4')) {
+            pane.innerHTML = `<video src="${val}" controls style="width:100%"></video>`;
+        } else if(val.startsWith('data:image')) {
+            pane.innerHTML = `<img src="${val}">`;
+        } else {
+            pane.innerHTML = `<p>${val}</p>`;
+        }
+        pane.style.display = pane.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function removeQuestion(id) { document.getElementById('card-' + id).remove(); autoSave(); }
+    function renderContent(val) { return val.startsWith('data:image') ? `<img src="${val}" style="max-height:45px;">` : val; }
+</script>
+
+</body></html>
